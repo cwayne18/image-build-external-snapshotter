@@ -19,9 +19,16 @@ RUN git clone --depth=1 https://${PKG}.git $GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
 RUN git fetch --all --tags --prune
 RUN git checkout tags/${TAG} -b ${TAG}
-RUN go mod edit -replace google.golang.org/grpc=google.golang.org/grpc@v1.79.3 && \
-    go mod edit -replace go.opentelemetry.io/otel/sdk=go.opentelemetry.io/otel/sdk@v1.43.0 && \
+# === BEGIN CVE go.mod overrides (managed by .github/agents/cve-gomod-override.md) ===
+# Pins modules to patched versions to remediate CVEs that are not yet fixed in the
+# upstream ${TAG} release. Managed automatically: entries are added from Trivy
+# findings and removed once upstream requires an equal-or-newer version.
+# Do not edit by hand - see .github/agents/cve-gomod-override.md.
+RUN go mod edit \
+      -replace google.golang.org/grpc=google.golang.org/grpc@v1.79.3 \
+      -replace go.opentelemetry.io/otel/sdk=go.opentelemetry.io/otel/sdk@v1.43.0 && \
     go mod tidy && go mod vendor
+# === END CVE go.mod overrides ===
 RUN go mod download
 # cross-compilation setup
 ARG TARGETARCH
